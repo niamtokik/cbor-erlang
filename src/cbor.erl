@@ -1,5 +1,10 @@
+%%%===================================================================
+%%% @doc
+%%%
+%%% see: https://github.com/yjh0502/cbor-erlang
+%%% @end
+%%%===================================================================
 -module(cbor).
-
 -export([decode/1, encode/1]).
 
 % encoder
@@ -7,6 +12,14 @@
 -define(MAX_4BYTE, 16#ffffffff).
 -define(MAX_2BYTE, 16#ffff).
 -define(MAX_1BYTE, 16#ff).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec encode(Term) -> Return when
+  Term :: term(),
+  Return :: iolist().
 
 encode(false) -> <<16#f4>>;
 encode(true) -> <<16#f5>>;
@@ -17,6 +30,7 @@ encode(neginf) -> <<16#f9, 16#fc, 0>>;
 encode(nan) -> <<16#f9, 16#fc, 1>>;
 encode(Num) when is_integer(Num) -> encode_num(Num);
 encode(Float) when is_float(Float) -> encode_float(Float);
+encode(Atom) when is_atom(Atom) -> encode(atom_to_binary(Atom));
 encode(Bin) when is_binary(Bin) -> encode_bin(Bin);
 encode(List) when is_list(List) -> [<<16#9f>>, lists:map(fun encode/1, List), <<16#ff>>];
 encode(Map) when is_map(Map) ->
@@ -72,7 +86,14 @@ encode_tag(N, Data) when N =< ?MAX_8BYTE -> [<<16#db, (N):64>>, encode(Data)].
 encode_simple(N) when N =< 19 -> <<(N + 16#e0)>>;
 encode_simple(N) when N =< ?MAX_1BYTE -> <<16#f8, N>>.
 
-% decoder
+%%--------------------------------------------------------------------
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec decode(Data) -> Return when
+  Data :: list() | iolist() | binary(),
+  Return :: term().
+
 decode(List) when is_list(List) ->
     decode(hexstr_to_bin(List));
 decode(Data) ->
